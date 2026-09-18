@@ -126,7 +126,9 @@ Profit: ${formatAmount(monthProfit)}
       return false;
     }
 
-    final tx = Map<String, dynamic>.from(deletedDemoTransactions.removeAt(restoreIndex));
+    final tx = Map<String, dynamic>.from(
+      deletedDemoTransactions.removeAt(restoreIndex),
+    );
     tx.remove('deletedAt');
     savedDemoTransactions.add(tx);
     _adjustSummaryForTransaction(tx, isRestore: true);
@@ -151,15 +153,22 @@ Profit: ${formatAmount(monthProfit)}
       if (vendor != null && vendor.toString().isNotEmpty) {
         details.write(' - Vendor: $vendor');
       }
-      details.write(' - ${tx['category']} - ${tx['paymentMode']} - ${tx['date']}');
+      details.write(
+        ' - ${tx['category']} - ${tx['paymentMode']} - ${tx['date']}',
+      );
       buffer.writeln('${i + 1}. ${details.toString()}');
     }
 
-    buffer.writeln('\nYou can restore the last deleted transaction by asking "Restore deleted transaction" or restore a specific one by number.');
+    buffer.writeln(
+      '\nYou can restore the last deleted transaction by asking "Restore deleted transaction" or restore a specific one by number.',
+    );
     return buffer.toString();
   }
 
-  void _adjustSummaryForTransaction(Map<String, dynamic> tx, {required bool isRestore}) {
+  void _adjustSummaryForTransaction(
+    Map<String, dynamic> tx, {
+    required bool isRestore,
+  }) {
     final amount = (tx['amount'] as num).toDouble();
     final type = tx['type']?.toString() ?? '';
     final delta = isRestore ? amount : -amount;
@@ -194,7 +203,9 @@ Profit: ${formatAmount(monthProfit)}
       if (vendor != null && vendor.toString().isNotEmpty) {
         details.write(' - Vendor: $vendor');
       }
-      details.write(' - ${tx['category']} - ${tx['paymentMode']} - ${tx['date']}');
+      details.write(
+        ' - ${tx['category']} - ${tx['paymentMode']} - ${tx['date']}',
+      );
       buffer.writeln('${i + 1}. ${details.toString()}');
     }
 

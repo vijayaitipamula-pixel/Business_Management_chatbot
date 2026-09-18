@@ -1,84 +1,74 @@
 import 'package:speech_to_text/speech_to_text.dart';
 
 class ChatbotVoiceService {
-  late final SpeechToText _speechToText;
+  ChatbotVoiceService({this.onListeningChanged, this.onTranscript});
+  final SpeechToText _speechToText = SpeechToText();
+  final void Function(bool)? onListeningChanged;
+  final void Function(String)? onTranscript;
   bool _isListening = false;
+  bool _disposed = false;
   String _lastWords = '';
-  String _selectedLocale = 'en_US';
-
-  ChatbotVoiceService() {
-    _speechToText = SpeechToText();
-  }
+  final String _selectedLocale = 'en_US';
 
   bool get isListening => _isListening;
   String get lastWords => _lastWords;
+  bool get isAvailable => _speechToText.isAvailable;
+
+  void _setListening(bool listening) {
+    _isListening = listening;
+    if (!_disposed) onListeningChanged?.call(listening);
+  }
 
   Future<bool> initializeVoice() async {
+    if (_disposed) return false;
     try {
-      final available = await _speechToText.initialize(
-        onError: (error) {
-          print('Speech recognition error: $error');
-          _isListening = false;
-        },
+      return await _speechToText.initialize(
+        onError: (_) => _setListening(false),
         onStatus: (status) {
-          print('Speech recognition status: $status');
+          if (status == 'done' || status == 'notListening') {
+            _setListening(false);
+          }
         },
       );
-
-      if (!available) {
-        print('Speech recognition not available on this device');
-        return false;
-      }
-
-      return true;
-    } catch (e) {
-      print('Error initializing speech recognition: $e');
+    } catch (_) {
       return false;
     }
   }
 
   Future<void> startListening() async {
-    if (_isListening) return;
-
+    if (_isListening || _disposed) return;
+    if (!await initializeVoice() || _disposed) return;
+    _lastWords = '';
+    _setListening(true);
     try {
-      final initialized = await initializeVoice();
-
-      if (!initialized) {
-        print('Speech recognition not available');
-        return;
-      }
-
-      _lastWords = '';
-      _isListening = true;
-
       await _speechToText.listen(
         onResult: (result) {
           _lastWords = result.recognizedWords;
-          print('Recognized: $_lastWords');
+          if (!_disposed) onTranscript?.call(_lastWords);
         },
         localeId: _selectedLocale,
       );
-    } catch (e) {
-      print('Error starting speech recognition: $e');
-      _isListening = false;
+      if (_disposed) await _speechToText.cancel();
+    } catch (_) {
+      _setListening(false);
     }
   }
 
   Future<void> stopListening() async {
-    if (!_isListening) return;
-
     try {
       await _speechToText.stop();
-      _isListening = false;
-    } catch (e) {
-      print('Error stopping speech recognition: $e');
-      _isListening = false;
+    } finally {
+      _setListening(false);
     }
   }
 
-  bool get isAvailable => _speechToText.isAvailable;
-
   Future<void> dispose() async {
-    await stopListening();
+    _disposed = true;
+    try {
+      await _speechToText.cancel();
+    } catch (_) {
+      // The plugin may be unavailable on this platform.
+    }
+    _isListening = false;
   }
 }

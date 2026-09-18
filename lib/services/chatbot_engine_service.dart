@@ -1,7 +1,9 @@
-﻿import '../models/chat_option.dart';
+import '../models/chat_option.dart';
 import 'chatbot_local_data_service.dart';
 
 class ChatbotEngineService {
+  static const unsupportedMessage =
+      'Sorry, not clear. Try: Add income/expense/purchase, Today summary, Profit/loss';
   final ChatbotLocalDataService localDataService;
 
   ChatbotEngineService(this.localDataService);
@@ -25,7 +27,10 @@ class ChatbotEngineService {
         ChatOption(label: 'month summary', action: 'month_summary'),
         ChatOption(label: 'Profit/Loss', action: 'profit_loss'),
         ChatOption(label: 'deleted transaction help', action: 'restore_help'),
-        ChatOption(label: 'Deleted Business Help', action: 'restore_business_help'),
+        ChatOption(
+          label: 'Deleted Business Help',
+          action: 'restore_business_help',
+        ),
         ChatOption(label: 'Receipt Issue', action: 'receipt_issue'),
         ChatOption(label: 'Sync Issue', action: 'sync_issue'),
         ChatOption(label: 'Reports', action: 'reports'),
@@ -36,7 +41,10 @@ class ChatbotEngineService {
       if (currentFlow == 'Income') {
         return [
           ChatOption(label: 'Sales', action: 'category:Sales'),
-          ChatOption(label: 'Service Income', action: 'category:Service Income'),
+          ChatOption(
+            label: 'Service Income',
+            action: 'category:Service Income',
+          ),
           ChatOption(
             label: 'Advance Received',
             action: 'category:Advance Received',
@@ -98,9 +106,7 @@ class ChatbotEngineService {
       ];
     }
 
-    return [
-      ChatOption(label: 'Cancel', action: 'cancel_transaction'),
-    ];
+    return [ChatOption(label: 'Cancel', action: 'cancel_transaction')];
   }
 
   String handleAction(String action) {
@@ -118,11 +124,11 @@ class ChatbotEngineService {
 
     if (action.startsWith('category:')) {
       final category = action.replaceFirst('category:', '');
-      
+
       if (category.toLowerCase() == 'other') {
         return 'Enter category:';
       }
-      
+
       draftTransaction['category'] = category;
       currentStep = 'payment';
 
@@ -131,13 +137,13 @@ class ChatbotEngineService {
 
     if (action.startsWith('payment:')) {
       final paymentMode = action.replaceFirst('payment:', '');
-      
+
       if (paymentMode.toLowerCase() == 'other') {
         return '''
 Please enter your custom payment mode (e.g., Cash+Card, Cheque, etc.):
 ''';
       }
-      
+
       draftTransaction['paymentMode'] = paymentMode;
       currentStep = 'date';
 
@@ -150,13 +156,13 @@ Select transaction date:
 
     if (action.startsWith('date:')) {
       final date = action.replaceFirst('date:', '');
-      
+
       if (date.toLowerCase() == 'other') {
         return '''
 Please enter the date in mm/dd/yyyy:
 ''';
       }
-      
+
       draftTransaction['date'] = date;
       currentStep = 'confirm';
 
@@ -232,7 +238,8 @@ Please enter the date in mm/dd/yyyy:
       return _startTransactionFlow('Income');
     }
 
-    if (text.contains('add') && (text.contains('expense') || text.contains('expence'))) {
+    if (text.contains('add') &&
+        (text.contains('expense') || text.contains('expence'))) {
       _startTransactionFlow('Expense');
       final extractedAmount = _extractAmountFromText(text);
       if (extractedAmount != null) {
@@ -299,7 +306,10 @@ Please enter the date in mm/dd/yyyy:
       return handleAction('receipt_issue');
     }
 
-    final restoreIndexMatch = RegExp(r'restore(?:\s+transaction)?\s+(\d+)', caseSensitive: false).firstMatch(text);
+    final restoreIndexMatch = RegExp(
+      r'restore(?:\s+transaction)?\s+(\d+)',
+      caseSensitive: false,
+    ).firstMatch(text);
     if (restoreIndexMatch != null) {
       final index = int.tryParse(restoreIndexMatch.group(1)!);
       if (index != null) {
@@ -343,8 +353,7 @@ Please enter the date in mm/dd/yyyy:
       return handleAction('reports');
     }
 
-
-    return 'Sorry, not clear. Try: Add income/expense/purchase, Today summary, Profit/loss';
+    return unsupportedMessage;
   }
 
   String _startTransactionFlow(String type) {
@@ -362,9 +371,7 @@ Please enter the date in mm/dd/yyyy:
 
     if (currentStep == 'amount') {
       var amount = double.tryParse(cleanInput.replaceAll(',', ''));
-      if (amount == null) {
-        amount = _extractAmountFromText(cleanInput);
-      }
+      amount ??= _extractAmountFromText(cleanInput);
 
       if (amount == null || amount <= 0) {
         return 'Invalid amount';
@@ -422,12 +429,14 @@ Please enter the date in mm/dd/yyyy:
 
     if (currentStep == 'date') {
       // Validate mm/dd/yyyy format
-      final dateRegex = RegExp(r'^(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])/\d{4}$');
-      
+      final dateRegex = RegExp(
+        r'^(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])/\d{4}$',
+      );
+
       if (!dateRegex.hasMatch(cleanInput)) {
         return 'Use mm/dd/yyyy format';
       }
-      
+
       draftTransaction['date'] = cleanInput;
       currentStep = 'confirm';
 
@@ -457,7 +466,8 @@ Please enter the date in mm/dd/yyyy:
     final double amount =
         (draftTransaction['amount'] as num?)?.toDouble() ?? 0.0;
     final String category = draftTransaction['category']?.toString() ?? '';
-    final String paymentMode = draftTransaction['paymentMode']?.toString() ?? '';
+    final String paymentMode =
+        draftTransaction['paymentMode']?.toString() ?? '';
     final String date = draftTransaction['date']?.toString() ?? '';
     final String? vendor = draftTransaction['vendor']?.toString();
 
@@ -471,11 +481,15 @@ Please enter the date in mm/dd/yyyy:
     final double amount =
         (draftTransaction['amount'] as num?)?.toDouble() ?? 0.0;
     final String category = draftTransaction['category']?.toString() ?? '';
-    final String paymentMode = draftTransaction['paymentMode']?.toString() ?? '';
+    final String paymentMode =
+        draftTransaction['paymentMode']?.toString() ?? '';
     final String date = draftTransaction['date']?.toString() ?? '';
     final String? vendor = draftTransaction['vendor']?.toString();
 
-    if (amount <= 0 || category.isEmpty || paymentMode.isEmpty || date.isEmpty) {
+    if (amount <= 0 ||
+        category.isEmpty ||
+        paymentMode.isEmpty ||
+        date.isEmpty) {
       return 'Missing details. Tap Edit';
     }
 
@@ -488,7 +502,8 @@ Please enter the date in mm/dd/yyyy:
       vendor: vendor,
     );
 
-    final successMessage = '$type ${localDataService.formatAmount(amount)} saved!\n\nUpdated Summary:\n${localDataService.getMonthSummary()}';
+    final successMessage =
+        '$type ${localDataService.formatAmount(amount)} saved!\n\nUpdated Summary:\n${localDataService.getMonthSummary()}';
 
     _clearFlow();
 
@@ -513,7 +528,9 @@ Please enter the date in mm/dd/yyyy:
       return 'No deleted transactions';
     }
 
-    final bool success = localDataService.restoreDeletedDemoTransaction(index: index - 1);
+    final bool success = localDataService.restoreDeletedDemoTransaction(
+      index: index - 1,
+    );
     if (!success) {
       return 'Can\'t restore #$index';
     }
@@ -530,23 +547,23 @@ Please enter the date in mm/dd/yyyy:
   /// Main method to parse voice commands and handle voice-based transactions
   String handleVoiceCommand(String voiceText) {
     final lowerText = voiceText.toLowerCase();
-    
+
     // Parse transaction type
     final transactionType = _parseTransactionType(lowerText);
     if (transactionType == null) {
       return 'Can\'t detect type. Try again';
     }
-    
+
     // Start the transaction flow
     _startTransactionFlow(transactionType);
-    
+
     // Parse and populate available fields
     final amount = _parseAmount(lowerText);
     final category = _parseCategory(lowerText, transactionType);
     final paymentMode = _parsePaymentMode(lowerText);
     final date = _parseDate(lowerText);
     final vendor = _parseVendor(lowerText);
-    
+
     // Set parsed values in draft transaction
     if (amount != null) {
       draftTransaction['amount'] = amount;
@@ -563,13 +580,18 @@ Please enter the date in mm/dd/yyyy:
     if (vendor != null) {
       draftTransaction['vendor'] = vendor;
     }
-    
+
     // Check if all required fields are available
     final requiredFields = ['amount', 'category', 'paymentMode', 'date'];
-    final allFieldsPresent = requiredFields.every((field) => draftTransaction.containsKey(field) && draftTransaction[field] != null);
-    
+    final allFieldsPresent = requiredFields.every(
+      (field) =>
+          draftTransaction.containsKey(field) &&
+          draftTransaction[field] != null,
+    );
+
     if (allFieldsPresent) {
       // All fields found, return confirmation message
+      currentStep = 'confirm';
       return _buildConfirmationMessage();
     } else {
       // Missing some fields, return error
@@ -579,13 +601,22 @@ Please enter the date in mm/dd/yyyy:
 
   /// Detects transaction type from voice text
   String? _parseTransactionType(String text) {
-    if (text.contains('income') || text.contains('earn') || text.contains('received') || text.contains('got')) {
+    if (text.contains('income') ||
+        text.contains('earn') ||
+        text.contains('received') ||
+        text.contains('got')) {
       return 'Income';
     }
-    if (text.contains('expense') || text.contains('spent') || text.contains('paid') || text.contains('cost me')) {
+    if (text.contains('expense') ||
+        text.contains('spent') ||
+        text.contains('paid') ||
+        text.contains('cost me')) {
       return 'Expense';
     }
-    if (text.contains('purchase') || text.contains('buy') || text.contains('bought') || text.contains('material')) {
+    if (text.contains('purchase') ||
+        text.contains('buy') ||
+        text.contains('bought') ||
+        text.contains('material')) {
       return 'Purchase';
     }
     return null;
@@ -622,7 +653,7 @@ Please enter the date in mm/dd/yyyy:
       if (text.contains('other income')) return 'Other Income';
       return null;
     }
-    
+
     if (transactionType == 'Expense') {
       if (text.contains('tea')) return 'Tea';
       if (text.contains('transport')) return 'Transport';
@@ -631,16 +662,18 @@ Please enter the date in mm/dd/yyyy:
       if (text.contains('other expense')) return 'Other Expense';
       return null;
     }
-    
+
     if (transactionType == 'Purchase') {
       if (text.contains('stock')) return 'Stock';
-      if (text.contains('raw material') || text.contains('raw')) return 'Raw Material';
+      if (text.contains('raw material') || text.contains('raw')) {
+        return 'Raw Material';
+      }
       if (text.contains('material')) return 'Material';
       if (text.contains('office')) return 'Office Items';
       if (text.contains('other purchase')) return 'Other Purchase';
       return null;
     }
-    
+
     return null;
   }
 
@@ -649,13 +682,20 @@ Please enter the date in mm/dd/yyyy:
     if (text.contains('cash') || text.contains('hand')) {
       return 'Cash';
     }
-    if (text.contains('upi') || text.contains('google pay') || text.contains('phone pay')) {
+    if (text.contains('upi') ||
+        text.contains('google pay') ||
+        text.contains('phone pay')) {
       return 'UPI';
     }
-    if (text.contains('bank') || text.contains('transfer') || text.contains('neft') || text.contains('rtgs')) {
+    if (text.contains('bank') ||
+        text.contains('transfer') ||
+        text.contains('neft') ||
+        text.contains('rtgs')) {
       return 'Bank Transfer';
     }
-    if (text.contains('card') || text.contains('credit') || text.contains('debit')) {
+    if (text.contains('card') ||
+        text.contains('credit') ||
+        text.contains('debit')) {
       return 'Card';
     }
     return null;
@@ -675,10 +715,16 @@ Please enter the date in mm/dd/yyyy:
   /// Extracts vendor name from text using regex (words that follow "from", "supplier", "to", or "with")
   String? _parseVendor(String text) {
     final patterns = [
-      RegExp(r'(?:from|supplier|to)\s+([a-zA-Z0-9\s]+?)(?:\s+(?:material|stock|office|raw|bank|upi|cash|card|today|yesterday|paid|for|on|with|at)|$)', caseSensitive: false),
-      RegExp(r'(?:with)\s+([a-zA-Z0-9\s]+?)(?:\s+(?:for|at)|$)', caseSensitive: false),
+      RegExp(
+        r'(?:from|supplier|to)\s+([a-zA-Z0-9\s]+?)(?:\s+(?:material|stock|office|raw|bank|upi|cash|card|today|yesterday|paid|for|on|with|at)|$)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'(?:with)\s+([a-zA-Z0-9\s]+?)(?:\s+(?:for|at)|$)',
+        caseSensitive: false,
+      ),
     ];
-    
+
     for (final pattern in patterns) {
       final match = pattern.firstMatch(text);
       if (match != null) {
@@ -688,8 +734,7 @@ Please enter the date in mm/dd/yyyy:
         }
       }
     }
-    
+
     return null;
   }
 }
-
