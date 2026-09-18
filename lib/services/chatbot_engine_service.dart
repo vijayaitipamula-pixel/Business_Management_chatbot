@@ -12,7 +12,7 @@ class ChatbotEngineService {
   final Map<String, dynamic> draftTransaction = {};
 
   String getWelcomeMessage() {
-    return 'Hi, Cubefore Assistant.\n\nWhat would you like to do?';
+    return 'Hi! Let’s manage your business.';
   }
 
   List<ChatOption> getCurrentOptions() {

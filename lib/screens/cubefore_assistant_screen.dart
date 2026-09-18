@@ -17,6 +17,7 @@ class CubeforeAssistantScreen extends StatefulWidget {
 class _CubeforeAssistantScreenState extends State<CubeforeAssistantScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _optionsScrollController = ScrollController();
 
   late final ChatbotLocalDataService _localDataService;
   late final ChatbotEngineService _engineService;
@@ -34,10 +35,7 @@ class _CubeforeAssistantScreenState extends State<CubeforeAssistantScreen> {
     _voiceService = ChatbotVoiceService();
 
     _messages.add(
-      ChatMessage(
-        text: _engineService.getWelcomeMessage(),
-        isUser: false,
-      ),
+      ChatMessage(text: _engineService.getWelcomeMessage(), isUser: false),
     );
   }
 
@@ -45,6 +43,7 @@ class _CubeforeAssistantScreenState extends State<CubeforeAssistantScreen> {
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
+    _optionsScrollController.dispose();
     _voiceService.dispose();
     super.dispose();
   }
@@ -131,7 +130,9 @@ class _CubeforeAssistantScreenState extends State<CubeforeAssistantScreen> {
 
     final available = await _voiceService.initializeVoice();
     if (!available) {
-      _addBotMessage('Voice recognition is not available on this device. You can type the transaction manually.');
+      _addBotMessage(
+        'Voice recognition is not available on this device. You can type the transaction manually.',
+      );
       return;
     }
 
@@ -142,14 +143,17 @@ class _CubeforeAssistantScreenState extends State<CubeforeAssistantScreen> {
   }
 
   Widget _buildMessageBubble(ChatMessage message) {
-    final Alignment alignment =
-        message.isUser ? Alignment.centerRight : Alignment.centerLeft;
+    final Alignment alignment = message.isUser
+        ? Alignment.centerRight
+        : Alignment.centerLeft;
 
-    final Color bgColor =
-        message.isUser ? const Color(0xFF16A085) : const Color(0xFFF1F5F9);
+    final Color bgColor = message.isUser
+        ? const Color(0xFF16A085)
+        : const Color(0xFFF1F5F9);
 
-    final Color textColor =
-        message.isUser ? Colors.white : const Color(0xFF1E293B);
+    final Color textColor = message.isUser
+        ? Colors.white
+        : const Color(0xFF1E293B);
 
     return Align(
       alignment: alignment,
@@ -175,13 +179,24 @@ class _CubeforeAssistantScreenState extends State<CubeforeAssistantScreen> {
         ),
         child: Text(
           message.text,
-          style: TextStyle(
-            color: textColor,
-            fontSize: 14.5,
-            height: 1.35,
-          ),
+          style: TextStyle(color: textColor, fontSize: 14.5, height: 1.35),
         ),
       ),
+    );
+  }
+
+  void _scrollOptions(int direction) {
+    if (!_optionsScrollController.hasClients) return;
+
+    final position = _optionsScrollController.position;
+    final target =
+        (position.pixels + direction * position.viewportDimension * 0.8)
+            .clamp(position.minScrollExtent, position.maxScrollExtent)
+            .toDouble();
+    _optionsScrollController.animateTo(
+      target,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
     );
   }
 
@@ -192,29 +207,50 @@ class _CubeforeAssistantScreenState extends State<CubeforeAssistantScreen> {
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Color(0xFFE2E8F0)),
-        ),
+        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: options.map((ChatOption option) {
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ActionChip(
-                label: Text(option.label),
-                backgroundColor: const Color(0xFFEFFDF8),
-                side: const BorderSide(color: Color(0xFF99F6E4)),
-                labelStyle: const TextStyle(
-                  color: Color(0xFF0F766E),
-                  fontWeight: FontWeight.w600,
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: 'Previous options',
+            onPressed: () => _scrollOptions(-1),
+            icon: const Icon(Icons.chevron_left),
+          ),
+          Expanded(
+            child: Scrollbar(
+              controller: _optionsScrollController,
+              thumbVisibility: true,
+              interactive: true,
+              child: SingleChildScrollView(
+                controller: _optionsScrollController,
+                padding: const EdgeInsets.only(bottom: 10),
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: options.map((ChatOption option) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ActionChip(
+                        label: Text(option.label),
+                        backgroundColor: const Color(0xFFEFFDF8),
+                        side: const BorderSide(color: Color(0xFF99F6E4)),
+                        labelStyle: const TextStyle(
+                          color: Color(0xFF0F766E),
+                          fontWeight: FontWeight.w600,
+                        ),
+                        onPressed: () => _handleOption(option),
+                      ),
+                    );
+                  }).toList(),
                 ),
-                onPressed: () => _handleOption(option),
               ),
-            );
-          }).toList(),
-        ),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Next options',
+            onPressed: () => _scrollOptions(1),
+            icon: const Icon(Icons.chevron_right),
+          ),
+        ],
       ),
     );
   }
@@ -227,9 +263,14 @@ class _CubeforeAssistantScreenState extends State<CubeforeAssistantScreen> {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: _isListening ? const Color(0xFFEF4444) : const Color(0xFF14B8A6),
+            backgroundColor: _isListening
+                ? const Color(0xFFEF4444)
+                : const Color(0xFF14B8A6),
             child: IconButton(
-              icon: Icon(_isListening ? Icons.mic : Icons.mic_none_rounded, color: Colors.white),
+              icon: Icon(
+                _isListening ? Icons.mic : Icons.mic_none_rounded,
+                color: Colors.white,
+              ),
               onPressed: _handleVoiceListen,
             ),
           ),
@@ -281,10 +322,7 @@ class _CubeforeAssistantScreenState extends State<CubeforeAssistantScreen> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xFF0F766E),
-            Color(0xFF14B8A6),
-          ],
+          colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
         ),
       ),
       child: SafeArea(
@@ -293,10 +331,7 @@ class _CubeforeAssistantScreenState extends State<CubeforeAssistantScreen> {
           children: [
             const CircleAvatar(
               backgroundColor: Colors.white,
-              child: Icon(
-                Icons.smart_toy_rounded,
-                color: Color(0xFF0F766E),
-              ),
+              child: Icon(Icons.smart_toy_rounded, color: Color(0xFF0F766E)),
             ),
             const SizedBox(width: 12),
             const Expanded(
@@ -309,14 +344,6 @@ class _CubeforeAssistantScreenState extends State<CubeforeAssistantScreen> {
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Free chatbot demo',
-                    style: TextStyle(
-                      color: Color(0xFFDDFCF5),
-                      fontSize: 12,
                     ),
                   ),
                 ],
