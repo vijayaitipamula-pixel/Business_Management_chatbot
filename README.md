@@ -8,7 +8,7 @@ An upgrade of the existing Flutter chatbot. The local transaction engine, income
 - Breathing assistant orb with typing, listening, thinking, generating, completion, and error states; respects reduced-motion settings.
 - Welcome suggestions, animated message cards, multiline composer, and option navigation arrows.
 - Selectable Markdown responses: headings, lists, tables, code blocks, and browser links. Tables and code scroll horizontally.
-- Copy feedback, AI-only regeneration, and retry for failed AI responses. Transaction actions are never regenerated.
+- AI-only regeneration and retry for failed AI responses. Transaction actions are never regenerated.
 - Summary cards display only values from the existing local data service, labeled as sample data.
 
 ## Run locally

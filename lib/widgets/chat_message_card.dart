@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/chat_message.dart';
@@ -16,35 +14,8 @@ class ChatMessageCard extends StatefulWidget {
 
 class _ChatMessageCardState extends State<ChatMessageCard>
     with AutomaticKeepAliveClientMixin {
-  bool _copied = false;
-  Timer? _copyTimer;
-
   @override
   bool get wantKeepAlive => true;
-
-  @override
-  void dispose() {
-    _copyTimer?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _copy() async {
-    try {
-      await Clipboard.setData(ClipboardData(text: widget.message.text));
-      if (!mounted) return;
-      setState(() => _copied = true);
-      _copyTimer?.cancel();
-      _copyTimer = Timer(const Duration(seconds: 2), () {
-        if (mounted) setState(() => _copied = false);
-      });
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not copy this message.')),
-        );
-      }
-    }
-  }
 
   Future<void> _openLink(String text, String? href, String title) async {
     final uri = Uri.tryParse(href ?? '');
@@ -142,33 +113,13 @@ class _ChatMessageCardState extends State<ChatMessageCard>
                         ),
                       ),
                 ),
-              if (!message.isUser) ...[
+              if (!message.isUser && widget.onRegenerate != null) ...[
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    IconButton(
-                      tooltip: _copied ? 'Copied' : 'Copy response',
-                      onPressed: _copy,
-                      iconSize: 17,
-                      icon: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 180),
-                        child: Icon(
-                          _copied ? Icons.check_rounded : Icons.copy_outlined,
-                          key: ValueKey(_copied),
-                          color: colors.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    if (widget.onRegenerate != null)
-                      IconButton(
-                        tooltip: 'Regenerate response',
-                        onPressed: widget.onRegenerate,
-                        iconSize: 18,
-                        icon: const Icon(Icons.refresh_rounded),
-                      ),
-                  ],
+                IconButton(
+                  tooltip: 'Regenerate response',
+                  onPressed: widget.onRegenerate,
+                  iconSize: 18,
+                  icon: const Icon(Icons.refresh_rounded),
                 ),
               ],
             ],

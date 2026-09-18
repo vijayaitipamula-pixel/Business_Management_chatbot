@@ -188,6 +188,6 @@ void main() {
     );
     await advance(tester);
     expect(tester.takeException(), isNull);
-    expect(find.byTooltip('Copy response'), findsOneWidget);
+    expect(find.byTooltip('Copy response'), findsNothing);
   });
 }
